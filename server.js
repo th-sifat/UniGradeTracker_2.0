@@ -1,6 +1,6 @@
 import express from 'express';
 import path from 'path';
-import { createServer as createViteServer } from 'vite';
+
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 import { PrismaClient } from '@prisma/client';
@@ -256,19 +256,23 @@ app.use(express.json());
     }
   });
 
-  // Vite middleware for development
-  if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-    (async () => {
-      const vite = await createViteServer({
-        server: { middlewareMode: true },
-        appType: 'spa',
-      });
-      app.use(vite.middlewares);
+ // Vite middleware for development
+if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+  (async () => {
+    // Dynamically import Vite ONLY in local development!
+    const { createServer: createViteServer } = await import('vite');
+    
+    const vite = await createViteServer({
+      server: { middlewareMode: true },
+      appType: 'spa',
+    });
+    app.use(vite.middlewares);
 
-      app.listen(PORT, '0.0.0.0', () => {
-        console.log(`Server running on http://localhost:${PORT}`);
-      });
-    })();
-  }
+    app.listen(PORT, '0.0.0.0', () => {
+      console.log(`Server running on http://localhost:${PORT}`);
+    });
+  })();
+}
 
+// Export the Express app for Vercel Serverless
 export default app;

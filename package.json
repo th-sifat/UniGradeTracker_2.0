@@ -4,12 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.js",
-    "build": "vite build && esbuild server.js --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
-    "start": "node dist/server.cjs",
-    "lint": "tsc --noEmit",
-    "postinstall": "prisma generate"
-  },
+  "dev": "tsx server.js",
+  "build": "vite build && esbuild server.js --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+  "start": "node dist/server.cjs",
+  "lint": "tsc --noEmit",
+  "postinstall": "prisma generate",
+  "vercel-build": "prisma generate && vite build"
+},
   "dependencies": {
     "@google/genai": "^2.4.0",
     "@prisma/client": "^5.22.0",

@@ -3,7 +3,6 @@ import path from 'path';
 import dotenv from 'dotenv';
 
 // Load local environment variables for local development
-dotenv.config({ path: '.env.local' });
 dotenv.config();
 
 import { createServer as createViteServer } from 'vite';

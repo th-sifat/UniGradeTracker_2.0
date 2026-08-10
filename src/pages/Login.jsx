@@ -23,7 +23,13 @@ export default function Login() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email, password })
       });
-      const data = await res.json();
+      let data;
+      const text = await res.text();
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        throw new Error(text.includes('A server error') ? 'A server error occurred. Please check Vercel logs and ensure environment variables are configured correctly.' : 'Received an invalid response from the server.');
+      }
       
       if (!res.ok) throw new Error(data.error || 'Login failed');
       

@@ -144,9 +144,11 @@ export default function AddSemesterModal({ isOpen, onClose, onSave, semesterToEd
                 onChange={e => setSemesterYear(e.target.value)}
                 className="flex-1 px-4 py-2.5 bg-white dark:bg-slate-700/50 border border-slate-200 dark:border-slate-600 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 dark:text-white outline-none"
               >
-                {[0, 1, 2, 3].map(offset => (
-                  <option key={offset} value={new Date().getFullYear() - offset}>{new Date().getFullYear() - offset}</option>
-                ))}
+                {Array.from({ length: 100 }, (_, i) => i).map(offset => (
+    <option key={offset} value={new Date().getFullYear() - offset}>
+      {new Date().getFullYear() - offset}
+    </option>
+  ))}
               </select>
             </div>
           </div>

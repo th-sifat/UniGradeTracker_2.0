@@ -1,6 +1,12 @@
 import express from 'express';
 import path from 'path';
+import dotenv from 'dotenv';
 
+// Load local environment variables for local development
+dotenv.config({ path: '.env.local' });
+dotenv.config();
+
+import { createServer as createViteServer } from 'vite';
 import { fileURLToPath } from 'url';
 import cookieParser from 'cookie-parser';
 import { PrismaClient } from '@prisma/client';
@@ -45,7 +51,8 @@ app.use(express.json());
       res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
       res.json({ user: { id: user.id, name: user.name, email: user.email } });
     } catch (error) {
-      res.status(500).json({ error: 'Internal server error' });
+      console.error('Registration error:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
     }
   });
 
@@ -62,7 +69,8 @@ app.use(express.json());
       res.cookie('token', token, { httpOnly: true, secure: true, sameSite: 'none', maxAge: 7 * 24 * 60 * 60 * 1000 });
       res.json({ user: { id: user.id, name: user.name, email: user.email } });
     } catch (error) {
-      res.status(500).json({ error: 'Internal server error' });
+      console.error('Login error:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
     }
   });
 
@@ -86,7 +94,8 @@ app.use(express.json());
       // Always return success to prevent email enumeration
       res.json({ success: true, message: 'Reset link sent if account exists.' });
     } catch (error) {
-      res.status(500).json({ error: 'Internal server error' });
+      console.error('Forgot password error:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
     }
   });
 
@@ -95,7 +104,8 @@ app.use(express.json());
       const user = await prisma.user.findUnique({ where: { id: req.userId }, select: { id: true, name: true, email: true, university: true } });
       res.json({ user });
     } catch (error) {
-      res.status(500).json({ error: 'Internal server error' });
+      console.error('Get user error:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
     }
   });
 
@@ -108,7 +118,8 @@ app.use(express.json());
       });
       res.json({ semesters });
     } catch (error) {
-      res.status(500).json({ error: 'Internal server error' });
+      console.error('Get semesters error:', error);
+      res.status(500).json({ error: 'Internal server error', details: error.message });
     }
   });
 
@@ -256,23 +267,19 @@ app.use(express.json());
     }
   });
 
- // Vite middleware for development
-if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
-  (async () => {
-    // Dynamically import Vite ONLY in local development!
-    const { createServer: createViteServer } = await import('vite');
-    
-    const vite = await createViteServer({
-      server: { middlewareMode: true },
-      appType: 'spa',
-    });
-    app.use(vite.middlewares);
+  // Vite middleware for development
+  if (process.env.NODE_ENV !== 'production' && !process.env.VERCEL) {
+    (async () => {
+      const vite = await createViteServer({
+        server: { middlewareMode: true },
+        appType: 'spa',
+      });
+      app.use(vite.middlewares);
 
-    app.listen(PORT, '0.0.0.0', () => {
-      console.log(`Server running on http://localhost:${PORT}`);
-    });
-  })();
-}
+      app.listen(PORT, '0.0.0.0', () => {
+        console.log(`Server running on http://localhost:${PORT}`);
+      });
+    })();
+  }
 
-// Export the Express app for Vercel Serverless
 export default app;

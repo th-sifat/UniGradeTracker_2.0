@@ -1,14 +1,14 @@
 {
-  "name": "react-example",
+  "name": "unigrade-tracker",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
   "type": "module",
   "scripts": {
     "dev": "tsx server.js",
-    "build": "vite build && esbuild server.js --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
+    "build": "prisma db push && vite build && esbuild server.js --bundle --platform=node --format=cjs --packages=external --sourcemap --outfile=dist/server.cjs",
     "start": "node dist/server.cjs",
     "lint": "tsc --noEmit",
-    "postinstall": "prisma generate && prisma db push"
+    "postinstall": "prisma generate"
   },
   "dependencies": {
     "@google/genai": "^2.4.0",

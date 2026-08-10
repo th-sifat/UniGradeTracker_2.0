@@ -2,6 +2,9 @@ import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { GraduationCap, Eye, EyeOff } from 'lucide-react';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
+import { auth, db } from '../lib/firebase';
 
 export default function Signup() {
   const [formData, setFormData] = useState({
@@ -24,25 +27,30 @@ export default function Signup() {
     setLoading(true);
     
     try {
-      const res = await fetch('/api/auth/register', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-      let data;
-      const text = await res.text();
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        throw new Error(text.includes('A server error') ? 'A server error occurred. Please check Vercel logs and ensure environment variables are configured correctly.' : 'Received an invalid response from the server.');
-      }
+      const userCredential = await createUserWithEmailAndPassword(auth, formData.email, formData.password);
+      const user = userCredential.user;
       
-      if (!res.ok) throw new Error(data.error || 'Registration failed');
+      await updateProfile(user, { displayName: formData.name });
       
-      login(data.user);
+      const userData = {
+        name: formData.name,
+        email: formData.email,
+        university: formData.university || null,
+        createdAt: serverTimestamp()
+      };
+      
+      if (!userData.university) delete userData.university;
+      
+      await setDoc(doc(db, 'users', user.uid), userData);
+      
+      login({ id: user.uid, ...userData, createdAt: new Date() });
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      if (err.code === 'auth/email-already-in-use') {
+        setError('Email already registered');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }

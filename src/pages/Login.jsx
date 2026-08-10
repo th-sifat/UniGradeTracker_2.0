@@ -2,6 +2,9 @@ import React, { useState, useContext } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext.jsx';
 import { GraduationCap, Eye, EyeOff } from 'lucide-react';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import { auth, db } from '../lib/firebase';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -18,25 +21,23 @@ export default function Login() {
     setLoading(true);
     
     try {
-      const res = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-      let data;
-      const text = await res.text();
-      try {
-        data = JSON.parse(text);
-      } catch (e) {
-        throw new Error(text.includes('A server error') ? 'A server error occurred. Please check Vercel logs and ensure environment variables are configured correctly.' : 'Received an invalid response from the server.');
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+      
+      const userDoc = await getDoc(doc(db, 'users', user.uid));
+      let userData = {};
+      if (userDoc.exists()) {
+        userData = userDoc.data();
       }
       
-      if (!res.ok) throw new Error(data.error || 'Login failed');
-      
-      login(data.user);
+      login({ id: user.uid, email: user.email, name: user.displayName || 'User', ...userData });
       navigate('/dashboard');
     } catch (err) {
-      setError(err.message);
+      if (err.code === 'auth/invalid-credential' || err.code === 'auth/user-not-found' || err.code === 'auth/wrong-password') {
+        setError('Invalid email or password');
+      } else {
+        setError(err.message);
+      }
     } finally {
       setLoading(false);
     }

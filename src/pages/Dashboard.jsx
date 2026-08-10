@@ -5,6 +5,8 @@ import CgpaChart from '../components/CgpaChart.jsx';
 import AddSemesterModal from '../components/AddSemesterModal.jsx';
 import { Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { collection, query, where, getDocs, deleteDoc, doc, orderBy } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export default function Dashboard() {
   const { user } = useContext(AuthContext);
@@ -16,16 +18,20 @@ export default function Dashboard() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    fetchSemesters();
-  }, []);
+    if (user) {
+      fetchSemesters();
+    }
+  }, [user]);
 
   const fetchSemesters = async () => {
     try {
-      const res = await fetch('/api/semesters');
-      const data = await res.json();
-      if (res.ok && data.semesters) {
-        setSemesters(data.semesters);
-      }
+      const q = query(collection(db, 'semesters'), where("userId", "==", user.id), orderBy("createdAt", "asc"));
+      const querySnapshot = await getDocs(q);
+      const data = [];
+      querySnapshot.forEach((doc) => {
+        data.push({ id: doc.id, ...doc.data() });
+      });
+      setSemesters(data);
     } catch (err) {
       console.error(err);
     } finally {
@@ -40,10 +46,8 @@ export default function Dashboard() {
   const confirmDelete = async () => {
     if (!semesterToDelete) return;
     try {
-      const res = await fetch(`/api/semesters/${semesterToDelete}`, { method: 'DELETE' });
-      if (res.ok) {
-        setSemesters(semesters.filter(s => s.id !== semesterToDelete));
-      }
+      await deleteDoc(doc(db, 'semesters', semesterToDelete));
+      setSemesters(semesters.filter(s => s.id !== semesterToDelete));
     } catch (err) {
       console.error(err);
     } finally {

@@ -1,0 +1,63 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Helpers
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+    
+    function isOwner(userId) {
+      return request.auth.uid == userId;
+    }
+    
+    function isValidId(id) {
+      return id.matches('^[a-zA-Z0-9_\\-]+$') && id.size() > 0 && id.size() <= 64;
+    }
+    
+    function incoming() {
+      return request.resource.data;
+    }
+    
+    function existing() {
+      return resource.data;
+    }
+    
+    // Validation: users
+    function isValidUser(data) {
+      return data.keys().hasAll(['name', 'email', 'createdAt']) &&
+             data.size() >= 3 && data.size() <= 4 &&
+             data.name is string && data.name.size() > 0 && data.name.size() <= 100 &&
+             data.email is string && data.email.size() > 0 && data.email.size() <= 100 &&
+             data.createdAt is timestamp &&
+             (!('university' in data.keys()) || (data.university is string && data.university.size() <= 100));
+    }
+    
+    // Validation: semesters
+    function isValidSemester(data) {
+      return data.keys().hasAll(['userId', 'semesterName', 'gpa', 'createdAt', 'courses']) &&
+             data.size() == 5 &&
+             data.userId is string && data.userId == request.auth.uid &&
+             data.semesterName is string && data.semesterName.size() > 0 && data.semesterName.size() <= 100 &&
+             data.gpa is number && data.gpa >= 0.0 && data.gpa <= 4.0 &&
+             data.createdAt is timestamp &&
+             data.courses is list && data.courses.size() <= 50;
+    }
+
+    match /users/{userId} {
+      allow get: if isAuthenticated() && isOwner(userId) && isValidId(userId);
+      allow create: if isAuthenticated() && isOwner(userId) && isValidId(userId) && isValidUser(incoming());
+      allow update: if isAuthenticated() && isOwner(userId) && isValidId(userId) && isValidUser(incoming());
+      allow delete: if false; // No deletion of users allowed from client
+      allow list: if false; // No list allowed for users
+    }
+    
+    match /semesters/{semesterId} {
+      allow get: if isAuthenticated() && isValidId(semesterId) && existing().userId == request.auth.uid;
+      allow list: if isAuthenticated(); // Filter must be applied by client
+      allow create: if isAuthenticated() && isValidId(semesterId) && isValidSemester(incoming());
+      allow update: if isAuthenticated() && isValidId(semesterId) && existing().userId == request.auth.uid && incoming().userId == request.auth.uid && isValidSemester(incoming());
+      allow delete: if isAuthenticated() && isValidId(semesterId) && existing().userId == request.auth.uid;
+    }
+  }
+}

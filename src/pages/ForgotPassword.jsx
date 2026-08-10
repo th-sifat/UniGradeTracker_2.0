@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { GraduationCap, ArrowLeft } from 'lucide-react';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { auth } from '../lib/firebase';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
@@ -14,15 +16,7 @@ export default function ForgotPassword() {
     setLoading(true);
 
     try {
-      const res = await fetch('/api/auth/forgot-password', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email })
-      });
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data.error || 'Failed to request password reset');
-      
+      await sendPasswordResetEmail(auth, email);
       setSuccess(true);
     } catch (err) {
       setError(err.message);

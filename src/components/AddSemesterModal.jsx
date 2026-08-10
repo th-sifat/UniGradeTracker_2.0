@@ -1,7 +1,11 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useContext } from 'react';
 import { X, Plus } from 'lucide-react';
+import { AuthContext } from '../context/AuthContext.jsx';
+import { collection, addDoc, updateDoc, doc, serverTimestamp } from 'firebase/firestore';
+import { db } from '../lib/firebase';
 
 export default function AddSemesterModal({ isOpen, onClose, onSave, semesterToEdit }) {
+  const { user } = useContext(AuthContext);
   const [semesterName, setSemesterName] = useState('Spring');
   const [semesterYear, setSemesterYear] = useState(new Date().getFullYear());
   const [courses, setCourses] = useState([
@@ -41,8 +45,6 @@ export default function AddSemesterModal({ isOpen, onClose, onSave, semesterToEd
     setCourses(courses.map(c => {
       if (c.id === id) {
         const newCourse = { ...c, [field]: value };
-        // Basic grade to point mapping if grade is changed manually (optional, but let's keep it simple or allow free input)
-        // Here we just let user input point manually as shown in screenshot.
         return newCourse;
       }
       return c;
@@ -74,35 +76,33 @@ export default function AddSemesterModal({ isOpen, onClose, onSave, semesterToEd
 
     try {
       const isEditing = !!semesterToEdit;
-      const url = isEditing ? `/api/semesters/${semesterToEdit.id}` : '/api/semesters';
-      const method = isEditing ? 'PUT' : 'POST';
+      const data = {
+        userId: user.id,
+        semesterName: semNameStr,
+        gpa: parseFloat(gpa),
+        courses: validCourses.map(c => ({
+          courseCode: c.courseCode || '',
+          courseTitle: c.courseTitle,
+          credit: parseFloat(c.credit),
+          grade: c.grade || 'AUTO',
+          gradePoint: parseFloat(c.gradePoint),
+          id: c.id
+        }))
+      };
 
-      const res = await fetch(url, {
-        method,
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          semesterName: semNameStr,
-          gpa: parseFloat(gpa),
-          courses: validCourses.map(c => ({
-            courseCode: c.courseCode || '',
-            courseTitle: c.courseTitle,
-            credit: parseFloat(c.credit),
-            grade: c.grade || 'AUTO',
-            gradePoint: parseFloat(c.gradePoint)
-          }))
-        })
-      });
-      const data = await res.json().catch(() => ({}));
-      if (res.ok) {
-        onSave(); // Refresh dashboard data
-        onClose();
-        // Reset form
-        setSemesterName('Spring');
-        setSemesterYear(new Date().getFullYear());
-        setCourses([{ id: Date.now(), courseCode: '', courseTitle: '', credit: '', grade: 'AUTO', gradePoint: '' }]);
+      if (isEditing) {
+        await updateDoc(doc(db, 'semesters', semesterToEdit.id), data);
       } else {
-        alert(`Failed to ${isEditing ? 'update' : 'save'} semester: ${data.details || data.error || res.statusText || 'Unknown error'}`);
+        data.createdAt = serverTimestamp();
+        await addDoc(collection(db, 'semesters'), data);
       }
+      
+      onSave(); // Refresh dashboard data
+      onClose();
+      // Reset form
+      setSemesterName('Spring');
+      setSemesterYear(new Date().getFullYear());
+      setCourses([{ id: Date.now(), courseCode: '', courseTitle: '', credit: '', grade: 'AUTO', gradePoint: '' }]);
     } catch (err) {
       console.error(err);
       alert(`Error ${semesterToEdit ? 'updating' : 'saving'} semester: ${err.message}`);

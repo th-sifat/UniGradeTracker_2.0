@@ -1,0 +1,35 @@
+{
+  "schema": {
+    "users": {
+      "$userId": {
+        "fields": {
+          "name": "string",
+          "email": "string",
+          "university": "string?",
+          "createdAt": "timestamp"
+        },
+        "permissions": {
+          "read": "request.auth != null && request.auth.uid == $userId",
+          "write": "request.auth != null && request.auth.uid == $userId"
+        }
+      }
+    },
+    "semesters": {
+      "$semesterId": {
+        "fields": {
+          "userId": "string",
+          "semesterName": "string",
+          "gpa": "number",
+          "createdAt": "timestamp?",
+          "courses": "array"
+        },
+        "permissions": {
+          "read": "request.auth != null && resource.data.userId == request.auth.uid",
+          "create": "request.auth != null && request.resource.data.userId == request.auth.uid",
+          "update": "request.auth != null && resource.data.userId == request.auth.uid && request.resource.data.userId == request.auth.uid",
+          "delete": "request.auth != null && resource.data.userId == request.auth.uid"
+        }
+      }
+    }
+  }
+}

@@ -48,13 +48,13 @@ service cloud.firestore {
       allow get: if isAuthenticated() && isOwner(userId) && isValidId(userId);
       allow create: if isAuthenticated() && isOwner(userId) && isValidId(userId) && isValidUser(incoming());
       allow update: if isAuthenticated() && isOwner(userId) && isValidId(userId) && isValidUser(incoming());
-      allow delete: if false; // No deletion of users allowed from client
-      allow list: if false; // No list allowed for users
+      allow delete: if false;
+      allow list: if false;
     }
     
     match /semesters/{semesterId} {
       allow get: if isAuthenticated() && isValidId(semesterId) && existing().userId == request.auth.uid;
-      allow list: if isAuthenticated(); // Filter must be applied by client
+      allow list: if isAuthenticated();
       allow create: if isAuthenticated() && isValidId(semesterId) && isValidSemester(incoming());
       allow update: if isAuthenticated() && isValidId(semesterId) && existing().userId == request.auth.uid && incoming().userId == request.auth.uid && isValidSemester(incoming());
       allow delete: if isAuthenticated() && isValidId(semesterId) && existing().userId == request.auth.uid;

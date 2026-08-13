@@ -41,10 +41,28 @@ export default function AddSemesterModal({ isOpen, onClose, onSave, semesterToEd
     }
   };
 
+  const getGradeFromPoint = (pointStr) => {
+    const p = parseFloat(pointStr);
+    if (isNaN(p)) return 'AUTO';
+    if (p >= 4.0) return 'A+';
+    if (p >= 3.75) return 'A';
+    if (p >= 3.5) return 'A-';
+    if (p >= 3.25) return 'B+';
+    if (p >= 3.0) return 'B';
+    if (p >= 2.75) return 'B-';
+    if (p >= 2.5) return 'C+';
+    if (p >= 2.25) return 'C';
+    if (p >= 2.0) return 'D';
+    return 'F';
+  };
+
   const updateCourse = (id, field, value) => {
     setCourses(courses.map(c => {
       if (c.id === id) {
         const newCourse = { ...c, [field]: value };
+        if (field === 'gradePoint') {
+          newCourse.grade = getGradeFromPoint(value);
+        }
         return newCourse;
       }
       return c;

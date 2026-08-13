@@ -44,6 +44,7 @@ export default function SemesterCard({ semester, onDelete, onEdit }) {
                 <th className="pb-3 font-medium text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider">Title</th>
                 <th className="pb-3 font-medium text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider text-center">Credit</th>
                 <th className="pb-3 font-medium text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider text-center">Grade</th>
+                <th className="pb-3 font-medium text-slate-500 dark:text-slate-400 text-sm uppercase tracking-wider text-center">Point</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-700/50">
@@ -60,8 +61,24 @@ export default function SemesterCard({ semester, onDelete, onEdit }) {
                   </td>
                   <td className="py-2.5 text-center">
                     <span className="inline-flex items-center justify-center px-3 py-1 rounded bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-400 font-bold text-sm min-w-[3rem]">
-                      {course.grade}
+                      {course.grade === 'AUTO' && course.gradePoint != null && course.gradePoint !== '' ? (() => {
+                        const p = parseFloat(course.gradePoint);
+                        if (isNaN(p)) return 'AUTO';
+                        if (p >= 4.0) return 'A+';
+                        if (p >= 3.75) return 'A';
+                        if (p >= 3.5) return 'A-';
+                        if (p >= 3.25) return 'B+';
+                        if (p >= 3.0) return 'B';
+                        if (p >= 2.75) return 'B-';
+                        if (p >= 2.5) return 'C+';
+                        if (p >= 2.25) return 'C';
+                        if (p >= 2.0) return 'D';
+                        return 'F';
+                      })() : course.grade}
                     </span>
+                  </td>
+                  <td className="py-2.5 text-slate-600 dark:text-slate-400 font-medium text-center">
+                    {course.gradePoint ? parseFloat(course.gradePoint).toFixed(2) : '-'}
                   </td>
                 </tr>
               ))}
@@ -74,6 +91,7 @@ export default function SemesterCard({ semester, onDelete, onEdit }) {
                 <td className="pt-4 pb-1 text-slate-800 dark:text-slate-200 font-bold text-center">
                   {totalCredits}
                 </td>
+                <td></td>
                 <td></td>
               </tr>
             </tfoot>
